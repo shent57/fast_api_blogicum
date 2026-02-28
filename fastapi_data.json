@@ -1,0 +1,20 @@
+{
+  "notes": [
+    {
+      "id": 1,
+      "title": "Сделать Алгоритмы",
+      "text": "До 17 числа",
+      "slug": "sdelat-algoritmyi",
+      "author_id": 1
+    }
+  ],
+  "users": [
+    {
+      "id": 1,
+      "username": "fast57",
+      "email": "",
+      "is_active": true,
+      "date_joined": "2026-02-12T09:17:56.519Z"
+    }
+  ]
+}
