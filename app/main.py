@@ -11,16 +11,16 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 
 # Получаем путь к файлу JSON
-path_to_json = os.path.join(parent_dir, 'fastapi_data.json')
+path_to_json = os.path.join(parent_dir, 'blog.json')
 
 
 app = FastAPI()
 
 
-@app.get("/notes/") # Обозначает, что эта функция будет обрабатывать GET запросы по пути /notes/
-def get_all_notes(): # Когда клиент отправляет GET запрос на /notes/, эта функция будет вызвана
+@app.get("/blogs/") # Обозначает, что эта функция будет обрабатывать GET запросы по пути /notes/
+def get_all_blogs(): # Когда клиент отправляет GET запрос на /notes/, эта функция будет вызвана
     return json_to_dict_list(path_to_json) # Возвращаем все заметки
 
 @app.get("/")
 def home_page():
-    return {"message": "Добро пожаловать в API заметок!"}
+    return {"message": "Добро пожаловать в API блогов!"}
