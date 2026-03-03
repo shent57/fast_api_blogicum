@@ -1,8 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from schemas.users import User
 
-class User():
+class PostRequestSchema(BaseModel):
+    author: User
+    text: str = Field(max_length=80)
     
-
-class Post(BaseModel):
-    author: 
+    
+class PostResponseSchema(BaseModel):
+    post_text: str
+    author_name: str

@@ -1,13 +1,7 @@
-from pudantic import BaseModel, SecretStr
+from pydantic import BaseModel, SecretStr, ConfigDict
 
-from schemas.users import User
 
 class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     login: str
-    password: Secretstr
-    
-user = User(login="test_user", password=SecretStr("pass"))
-
-user.password.get_secret_value()
-
-class Post
+    password: SecretStr
