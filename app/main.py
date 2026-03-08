@@ -14,23 +14,24 @@ parent_dir = os.path.dirname(script_dir)
 # Получаем путь к файлу JSON
 path_to_json = os.path.join(parent_dir, 'blog.json')
 
-
+# инициализация объекта
 small_db = JSONDatabase(file_path=path_to_json)
 
+# Создаём приложение
 app = FastAPI()
 
-
+# Возврат текста на главную страницу
 @app.get("/")
 def home_page():
     return {"message": "Добро пожаловать в API блогов!"}
 
-
+# Возвращает список всех блогов
 @app.get("/blogs")
 def get_blogs():
     return get_all_records()
 
-
-@app.get("/blogs/post/{category_id}", response_model=list[Post])
+# Данные, которые должен получить пользователь
+@app.get("/blogs/post/{category_id}", response_model=list[Post]) # передаём нашу модель
 def get_posts(category_id: int, author: Optional[int] = None, category: Optional[int] = None, location: Optional[int] = None):
     records = get_all_records()
     filtered_posts = []
@@ -93,9 +94,23 @@ def get_categories(is_published: bool, title: Optional[str] = None):
     blogs = get_all_records()
     filtered_categories = []
     for blog in blogs:
-        if blog.get("model") == "blog.category" and blog["fields"]["is_published"] == is_published:
-            filtered_categories.append(blog)
+        if blog.get("model") != "blog.category":
+            continue
         
+        fields = blog.get("fields", {})
+        
+        required_fields = ["title", "description", "slug", "created_at"]
+        if not all(field in fields for field in required_fields):
+            continue
+        
+        if fields["is_published"] == is_published:
+            category_data = {
+                "model": blog["model"],
+                "pk": blog["pk"],
+                "fields": fields
+            }
+            filtered_categories.append(category_data)
+            
     if title is not None:
         filtered_categories = [category for category in filtered_categories if title.lower() in category['fields']['title'].lower()]
         
@@ -134,8 +149,22 @@ def get_locations(is_published: bool, name: Optional[str] = None):
     blogs = get_all_records()
     filtered_locations = []
     for blog in blogs:
-        if blog.get("model") == "blog.location" and blog["fields"]["is_published"] == is_published:
-            filtered_locations.append(blog)
+        if blog.get("model") != "blog.location":
+            continue
+        
+        fields = blog.get("fields", {})
+        
+        if "name" not in fields or "created_at" not in fields:
+            continue
+        
+        if fields.get("is_published") == is_published:
+            location_data = {
+                "model": blog["model"],
+                "pk": blog["pk"],
+                "fields": fields
+            }
+            filtered_locations.append(location_data)
+            
     if name is not None:
         filtered_locations = [location for location in filtered_locations if name.lower() in location['fields']['name'].lower()]
     return filtered_locations
@@ -153,7 +182,8 @@ def create_location(location: LocationCreate):
     
 @app.put("/blogs/location")
 def update_location_handler(filter_location: LocationUpdateFilter, new_data: LocationUpdateData):
-    check = update_location({"pk": filter_location.location_id}, {"fields": new_data.dict()})
+    check = update_location({"pk": filter_location.location_id}, new_data.dict()
+                            )
     if check:
         return {"message": "Местоположение успешно обновлено!"}
     else:        

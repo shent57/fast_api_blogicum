@@ -28,14 +28,12 @@ class User(UserBase):
     class Config:
         orm_mode = True
         
-        
-class CategoryBase(BaseModel):
-    title: str = Field(..., max_length=256, description="Заголовок категории")
-    description: str = Field(..., description="Описание категории")
-    slug: str = Field(..., pattern="^[-a-zA-Z0-9_]+$", description="Идентификатор категории для URL; разрешены символы латиницы, цифры, дефис и подчёркивание")
-    is_published: bool = Field(True, description="Публикация категории")
+class CategoryFields(BaseModel):
+    title: str = Field(..., max_length=256)
+    description: str = Field(...)
+    slug: str = Field(..., pattern="^[-a-zA-Z0-9_]+$")
+    is_published: bool = Field(True)
     created_at: datetime
-    
     
     @validator('slug')
     def validate_slug(cls, v: str) -> str:
@@ -43,12 +41,13 @@ class CategoryBase(BaseModel):
             raise ValueError("Slug должен содержать только латинские буквы, цифры, дефис и подчёркивание")
         return v
     
-class CategoryCreate(CategoryBase):
+class CategoryCreate(CategoryFields):
     pass
 
-class Category(CategoryBase):
+class Category(BaseModel):
     model: str = "blog.category"
     pk: int
+    fields: CategoryFields
     
     class Config:
         orm_mode = True
@@ -64,20 +63,21 @@ class CategoryUpdateData(BaseModel):
     is_published: Optional[bool] = None
     created_at: Optional[datetime] = None
     
-        
-class LocationBase(BaseModel):
+    
+class LocationFields(BaseModel):
     name: str = Field(..., max_length=256, description="Название места")
     is_published: bool = Field(True, description="Публикация места")
     created_at: datetime
     
     
-class LocationCreate(LocationBase):
+class LocationCreate(LocationFields):
     pass
 
 
-class Location(LocationBase):
+class Location(BaseModel):
     model: str = "blog.location"
     pk: int
+    fields: LocationFields
     
     class Config:
         orm_mode = True
@@ -86,9 +86,7 @@ class LocationUpdateFilter(BaseModel):
     location_id: int
     
 class LocationUpdateData(BaseModel):
-    name: Optional[str] = Field(None, max_length=256)
-    is_published: Optional[bool] = None
-    created_at: Optional[datetime] = None
+    fields: Optional[LocationFields] = None
         
         
 class CommentBase(BaseModel):
