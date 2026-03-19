@@ -6,8 +6,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 class Database:
-    def __init__(self):
-        self._db_url = "sqlite:////Users/cuasar/Documents/GitHub/fastapi_django_refactor_example/sqlite.db"
+    def __init__(self, db_path: str = "sqlite:///../db.sqlite3"):
+        self._db_url = db_path
         self._engine = create_engine(self._db_url)
 
     @contextmanager
@@ -26,5 +26,5 @@ class Database:
             raise
 
 
-database = Database()
+database = Database("sqlite:///../db.sqlite3")
 Base = declarative_base()
