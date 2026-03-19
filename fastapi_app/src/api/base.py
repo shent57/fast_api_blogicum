@@ -1,10 +1,7 @@
-from fastapi import FastAPI, HTTPException
-from json_db_lite import JSONDatabase
-from .utils import get_all_records, add_post, add_location, add_category, update_post, update_category, update_location, delete_post, delete_category, delete_location
-import os # модуль, который поможет нам настроить относительные пути к JSON
-from typing import Optional # позволит нам передавать значения по умолчанию в параметры пути и запросов
-from .models import Post, Category, Location, PostCreate, CategoryCreate, LocationCreate, CategoryUpdateFilter, CategoryUpdateData, LocationUpdateFilter, LocationUpdateData, DeleteFilter, PostUpdateFilter, PostUpdateData
+from fastapi import APIRouter, status, HTTPException
+import os
 
+from src.infrastructure.db.json_db
 # Получаем путь к дирректории текущего скрипта
 script_dir = os.path.dirname(os.path.abspath(__file__))
 

@@ -27,7 +27,8 @@ class User(UserBase):
     
     class Config:
         orm_mode = True
-        
+
+
 class CategoryFields(BaseModel):
     title: str = Field(..., max_length=256)
     description: str = Field(...)
@@ -61,7 +62,7 @@ class CategoryUpdateData(BaseModel):
     description: Optional[str] = None
     slug: Optional[str] = None
     is_published: Optional[bool] = None
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
     
     
 class LocationFields(BaseModel):
@@ -127,7 +128,7 @@ class PostCreate(PostBase):
 class Post(PostBase):
     model: str = "blog.post"
     pk: int
-    comments: List[Comment] = []
+    comments: list[Comment] = []
     
     class Config:
         orm_mode = True
