@@ -42,4 +42,3 @@ class CategoryNotFoundException(BaseDatabaseException):
 
 class CategoryAlreadyExistsException(BaseDatabaseException):
     pass
-

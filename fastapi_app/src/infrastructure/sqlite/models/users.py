@@ -1,7 +1,8 @@
-from infrastructure.sqlite.database import Base
 from datetime import datetime
+
+from infrastructure.sqlite.database import Base
+from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Boolean, DateTime, Text
 
 
 class User(Base):
@@ -14,7 +15,7 @@ class User(Base):
     last_name: Mapped[str] = mapped_column(String(150), nullable=False, default="")
     email: Mapped[str] = mapped_column(String(254), nullable=False, default="")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    is_stuff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_staff: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     date_joined: Mapped[str] = mapped_column(DateTime, nullable=False)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=False)

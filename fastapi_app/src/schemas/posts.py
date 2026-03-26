@@ -1,16 +1,20 @@
-from pydantic import BaseModel, Field # используется для создания моделей данных и валидации
 from datetime import datetime
-from typing import List # для указания необязательных полей
+from typing import List  # для указания необязательных полей
+
+from pydantic import (  # используется для создания моделей данных и валидации
+    BaseModel, Field)
+from schemas.comments import CommentResponseSchema
+
 
 class PostRequestSchema(BaseModel):
     text: str = Field(..., max_length=80)
-    author: int
     title: str = Field(..., max_length=256)
     pub_date: datetime
     is_published: bool = True
     image: str | None = None
-    category: int
-    location: int | None = None
+    category_id: int
+    location_id: int | None = None
+
 
 class PostResponseSchema(BaseModel):
     post_text: str
@@ -22,12 +26,13 @@ class PostResponseSchema(BaseModel):
     category: int
     location: int | None = None
     pk: int
-    comments: List['CommentResponseSchema'] = []
-        
-        
+    comments: List["CommentResponseSchema"] = []
+
+
 class PostUpdateFilter(BaseModel):
     post_id: int
-    
+
+
 class PostUpdateData(BaseModel):
     title: str | None = Field(None, max_length=256)
     text: str | None = None

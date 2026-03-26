@@ -1,8 +1,6 @@
+from typing import Any  # для указания необязательных полей
+
 from pydantic import BaseModel
-from typing import Any # для указания необязательных полей
-
-
-
 
 
 class DeleteFilter(BaseModel):

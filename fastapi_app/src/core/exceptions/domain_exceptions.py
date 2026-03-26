@@ -17,7 +17,8 @@ class UserNotFoundByLoginException(BaseDomainException):
 
 
 class UserLoginIsNotUniqueException(BaseDomainException):
-    _exception_text_template = "Пользователь с логином='{login}' уже существует"
+    _exception_text_template = (
+        "Пользователь с логином='{login}' уже существует")
 
     def __init__(self, login: str) -> None:
         detail = self._exception_text_template.format(login=login)

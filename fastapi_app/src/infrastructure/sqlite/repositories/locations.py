@@ -1,40 +1,41 @@
-from typing import Type, List
+from typing import List, Type
 
-from sqlalchemy import insert, select
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-
+from core.exceptions.database_exceptions import (
+    LocationAlreadyExistsException, LocationNotFoundException)
 from infrastructure.sqlite.models.locations import Location as LocationModel
 from schemas.locations import LocationCreate as LocationSchema
-from core.exceptions.database_exceptions import LocationNotFoundException, LocationAlreadyExistsException
+from sqlalchemy import insert, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 
 class LocationRepository:
     def __init__(self):
         self._model: Type[LocationModel] = LocationModel
-    
+
     def get_by_id(self, session: Session, location_id: int) -> LocationModel:
-        query = (
-            select(self._model)
-            .where(self._model.id == location_id)
-        )
+        query = select(self._model).where(self._model.id == location_id)
 
         location = session.scalar(query)
         if not location:
             raise LocationNotFoundException()
 
         return location
-    
 
-    def get_all(self, session: Session, is_published: bool | None = None) -> List[LocationModel]:
+    def get_all(
+        self, session: Session, is_published: bool | None = None
+    ) -> List[LocationModel]:
         query = select(self._model)
 
         if is_published is not None:
             query = query.where(self._model.is_published == is_published)
 
         return list(session.scalars(query))
-    
-    def create(self, session: Session, location: LocationSchema) -> LocationModel:
+
+    def create(
+            self, 
+            session: Session, 
+            location: LocationSchema) -> LocationModel:
         query = (
             insert(self._model)
             .values(**location.model_dump())
@@ -47,8 +48,11 @@ class LocationRepository:
             raise LocationAlreadyExistsException()
 
         return location
-    
-    def update(self, session: Session, location_id: int, **kwargs) -> LocationModel:
+
+    def update(
+            self, 
+            session: Session, 
+            location_id: int, **kwargs) -> LocationModel:
         location = self.get_by_id(session, location_id)
 
         for key, value in kwargs.items():
@@ -58,7 +62,7 @@ class LocationRepository:
         session.flush()
 
         return location
-    
+
     def delete(self, session: Session, location_id: int) -> None:
         location = self.get_by_id(session, location_id)
         session.delete(location)

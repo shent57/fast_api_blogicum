@@ -1,12 +1,11 @@
 from typing import Type
 
-from sqlalchemy import insert, select
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
-
+from core.exceptions.database_exceptions import (UserAlreadyExistsException,
+                                                 UserNotFoundException)
 from infrastructure.sqlite.models.users import User as UserModel
-from schemas.users import UserCreate as UserSchema
-from core.exceptions.database_exceptions import UserNotFoundException, UserAlreadyExistsException
+from sqlalchemy import insert, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 
 class UserRepository:
@@ -14,38 +13,29 @@ class UserRepository:
         self._model: Type[UserModel] = UserModel
 
     def get_by_id(self, session: Session, user_id: int) -> UserModel:
-        query = (
-            select(self._model)
-            .where(self._model.id == user_id)
-        )
+        query = select(self._model).where(self._model.id == user_id)
 
         user = session.scalar(query)
         if not user:
             raise UserNotFoundException()
 
         return user
-    
+
     def get_by_username(self, session: Session, username: str) -> UserModel:
-        query = (
-            select(self._model)
-            .where(self._model.username == username)
-        )
+        query = select(self._model).where(self._model.username == username)
 
         user = session.scalar(query)
         if not user:
             raise UserNotFoundException()
 
         return user
-    
-    def create(self, session: Session, user: UserSchema) -> UserModel:
-        query = (
-            insert(self._model)
-            .values(**user.model_dump())
-            .returning(self._model)
-        )
+
+    def create(self, session: Session, user_data: dict) -> UserModel:
+        query = insert(self._model).values(**user_data).returning(self._model)
 
         try:
             user = session.scalar(query)
+            session.commit()
         except IntegrityError:
             raise UserAlreadyExistsException()
 
@@ -61,7 +51,7 @@ class UserRepository:
         session.commit()
 
         return user
-    
+
     def delete(self, session: Session, user_id: int) -> None:
         user = self.get_by_id(session, user_id)
         session.delete(user)

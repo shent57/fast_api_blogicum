@@ -1,34 +1,35 @@
-from fastapi import APIRouter, status, HTTPException, Depends
+from datetime import datetime
 
-from schemas.posts import PostRequestSchema, PostResponseSchema
-from schemas.users import User
-from domain.user.use_cases.get_user_by_login import GetUserByLoginUseCase
-from api.depends import get_get_user_by_login_use_case
-
-router = APIRouter()
-
-
-@router.get("/user/{login}", status_code=status.HTTP_200_OK, response_model=User)
-async def get_user_by_login(
-    login: str,
-    use_case: GetUserByLoginUseCase = Depends(get_get_user_by_login_use_case)
-) -> User:
-    user = await use_case.execute(login=login)
-
-    return user
+from core.exceptions.database_exceptions import UserNotFoundException
+from core.exceptions.domain_exceptions import UserNotFoundByLoginException
+from infrastructure.sqlite.database import Database
+from infrastructure.sqlite.repositories.users import UserRepository
+from schemas.users import User as UserSchema
 
 
-@router.post("/test_json", status_code=status.HTTP_201_CREATED, response_model=PostResponseSchema)
-async def test_json(post: PostRequestSchema) -> dict:
-    if len(post.text) < 3:
-        raise HTTPException(
-            detail="Длина поста должна быть не меньше 3 символов",
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+class GetUserByLoginUseCase:
+    def __init__(self, user_repository: UserRepository, database: Database):
+        self._database = database
+        self._user_repository = user_repository
+
+    async def execute(self, login: str) -> UserSchema:
+        try:
+            with self._database.session() as session:
+                user = self._user_repository.get_by_username(session, login)
+        except UserNotFoundException:
+            raise UserNotFoundByLoginException(login=login)
+
+        return UserSchema(
+            username=user.username,
+            bio=user.bio,
+            email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            is_active=user.is_active,
+            date_joined=(
+                user.date_joined
+                if isinstance(user.date_joined, datetime)
+                else datetime.fromisoformat(user.date_joined)
+            ),
+            pk=user.id,
         )
-
-    response = {
-        "post_text": post.text,
-        "author_name": post.author.login
-    }
-
-    return PostResponseSchema.model_validate(obj=response)
