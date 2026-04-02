@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from pydantic import (  # используется для создания моделей данных и валидации
-    BaseModel, Field)
+    BaseModel, Field, ConfigDict)
 
 
 class LocationBase(BaseModel):
@@ -15,6 +15,8 @@ class LocationCreate(LocationBase):
 
 
 class LocationResponseSchema(LocationBase):
+    model_config = ConfigDict(from_attributes=True)
+    created_at: datetime
     id: int = Field(..., description="Уникальный идентификатор места")
     model: str = Field("blog.location", description="Тип модели")
 

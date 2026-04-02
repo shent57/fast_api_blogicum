@@ -22,16 +22,4 @@ class GetLocationByIdUseCase:
             if not location:
                 raise LocationNotFoundException()
 
-            created_at = (
-                location.created_at
-                if isinstance(location.created_at, datetime)
-                else datetime.fromisoformat(location.created_at)
-            )
-
-            return LocationResponseSchema(
-                id=location.id,
-                name=location.name,
-                is_published=location.is_published,
-                created_at=created_at,
-                model="blog.location",
-            )
+            return LocationResponseSchema.model_validate(location)

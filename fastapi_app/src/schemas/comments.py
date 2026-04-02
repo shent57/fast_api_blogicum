@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from pydantic import (  # используется для создания моделей данных и валидации
-    BaseModel, Field)
+    BaseModel, Field, ConfigDict)
 
 
 class CommentBase(BaseModel):
@@ -16,6 +16,8 @@ class CommentCreate(CommentBase):
 
 
 class CommentResponseSchema(CommentBase):
+    model_config = ConfigDict(from_attributes=True)
+    created_at: datetime
     post_id: int = Field(..., description="ID поста")
     author_id: int = Field(..., description="ID автора комментария")
     model: str = "blog.comment"

@@ -23,7 +23,7 @@ class PostRepository:
 
         return post
 
-    def get_all(self, session: Session) -> List[PostModel]:
+    def get_all(self, session: Session) ->  list[PostModel]:
         query = select(self._model)
 
         return list(session.scalars(query))

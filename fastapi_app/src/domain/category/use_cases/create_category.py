@@ -27,12 +27,4 @@ class CreateCategoryUseCase:
                 else datetime.fromisoformat(created_category.created_at)
             )
 
-            return CategoryResponseSchema(
-                id=created_category.id,
-                title=created_category.title,
-                description=created_category.description,
-                slug=created_category.slug,
-                is_published=created_category.is_published,
-                created_at=created_at,
-                model="blog.category",
-            )
+            return CategoryResponseSchema.model_validate(created_category)

@@ -24,19 +24,4 @@ class CreateUserUseCase:
         except UserAlreadyExistsException:
             raise UserLoginIsNotUniqueException(login=user.username)
 
-        date_joined = (
-            created_user.date_joined
-            if isinstance(created_user.date_joined, datetime)
-            else datetime.fromisoformat(created_user.date_joined)
-        )
-
-        return UserSchema(
-            username=created_user.username,
-            bio=created_user.bio,
-            email=created_user.email,
-            first_name=created_user.first_name,
-            last_name=created_user.last_name,
-            is_active=created_user.is_active,
-            date_joined=date_joined,
-            pk=created_user.id,
-        )
+        return UserSchema.model_validate(created_user)

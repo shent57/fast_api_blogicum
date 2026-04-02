@@ -28,12 +28,4 @@ class UpdateCategoryUseCase:
                 if isinstance(updated_category.created_at, datetime)
                 else datetime.fromisoformat(updated_category.created_at)
             )
-            return CategoryResponseSchema(
-                id=updated_category.id,
-                title=updated_category.title,
-                description=updated_category.description,
-                slug=updated_category.slug,
-                is_published=updated_category.is_published,
-                created_at=created_at,
-                model="blog.category",
-            )
+            return CategoryResponseSchema.model_validate(updated_category)

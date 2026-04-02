@@ -15,15 +15,4 @@ class GetPostByIdUseCase:
             if not post:
                 raise PostNotFoundException()
 
-            return PostResponseSchema(
-                post_text=post.text,
-                author_name="",
-                title=post.title,
-                pub_date=post.pub_date,
-                is_published=post.is_published,
-                image=post.image,
-                category=post.category_id,
-                location=post.location_id,
-                pk=post.id,
-                comments=[],
-            )
+            return PostResponseSchema.model_validate(post)

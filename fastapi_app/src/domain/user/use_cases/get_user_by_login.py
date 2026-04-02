@@ -19,17 +19,4 @@ class GetUserByLoginUseCase:
         except UserNotFoundException:
             raise UserNotFoundByLoginException(login=login)
 
-        return UserSchema(
-            username=user.username,
-            bio=user.bio,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            is_active=user.is_active,
-            date_joined=(
-                user.date_joined
-                if isinstance(user.date_joined, datetime)
-                else datetime.fromisoformat(user.date_joined)
-            ),
-            pk=user.id,
-        )
+        return UserSchema.model_validate(user)

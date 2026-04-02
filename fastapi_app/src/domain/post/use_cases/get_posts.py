@@ -34,25 +34,4 @@ class GetPostsUseCase:
             if location is not None:
                 posts = [p for p in posts if p.location_id == location]
 
-            result = []
-            for p in posts:
-                author_obj = self._user_repository.get_by_id(
-                    session, 
-                    p.author_id)
-
-                return [
-                    PostResponseSchema(
-                        post_text=p.text,
-                        author_name=author_obj.username,
-                        title=p.title,
-                        pub_date=p.pub_date,
-                        is_published=p.is_published,
-                        image=p.image,
-                        category=p.category_id,
-                        location=p.location_id,
-                        pk=p.id,
-                        comments=[],
-                    )
-                ]
-
-        return result
+            return [PostResponseSchema.model_validate(post) for post in posts]

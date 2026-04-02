@@ -2,7 +2,7 @@ import re  # для использования регулярных выраже
 from datetime import datetime
 
 from pydantic import (  # используется для создания моделей данных и валидации
-    BaseModel, Field, field_validator)
+    BaseModel, Field, field_validator, ConfigDict)
 
 
 class CategoryBase(BaseModel):
@@ -31,6 +31,7 @@ class CategoryCreate(CategoryBase):
 
 
 class CategoryResponseSchema(CategoryBase):
+    model_config = ConfigDict(from_attributes=True)
     id: int = Field(..., description="Уникальный идентификатор категории")
     model: str = Field("blog.category", description="Тип модели")
 

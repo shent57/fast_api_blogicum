@@ -19,16 +19,6 @@ class CreateLocationUseCase:
             created_location = self._location_repository.create(
                 session, location)
 
-            created_at = (
-                created_location.created_at
-                if isinstance(created_location.created_at, datetime)
-                else datetime.fromisoformat(created_location.created_at)
-            )
+            created_location = self._location_repository.create(session, location)
 
-            return LocationResponseSchema(
-                id=created_location.id,
-                name=created_location.name,
-                is_published=created_location.is_published,
-                created_at=created_at,
-                model="blog.location",
-            )
+            return LocationResponseSchema.model_validate(created_location)

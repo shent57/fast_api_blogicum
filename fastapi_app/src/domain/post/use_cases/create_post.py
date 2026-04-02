@@ -19,15 +19,4 @@ class CreatePostUseCase:
             post_dict["created_at"] = datetime.now()
             created_post = self._post_repository.create(session, post_dict)
 
-            return PostResponseSchema(
-                post_text=created_post.text,
-                author_name="",
-                title=created_post.title,
-                pub_date=created_post.pub_date,
-                is_published=created_post.is_published,
-                image=created_post.image,
-                category=created_post.category_id,
-                location=created_post.location_id,
-                pk=created_post.id,
-                comments=[],
-            )
+            return PostResponseSchema.model_validate(created_post)

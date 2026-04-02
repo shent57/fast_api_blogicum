@@ -24,15 +24,4 @@ class UpdatePostUseCase:
             except PermissionError:
                 raise PostPermissionException("редактирования")
 
-            return PostResponseSchema(
-                post_text=updated_post.text,
-                author_name="",
-                title=updated_post.title,
-                pub_date=updated_post.pub_date,
-                is_published=updated_post.is_published,
-                image=updated_post.image,
-                category=updated_post.category_id,
-                location=updated_post.location_id,
-                pk=updated_post.id,
-                comments=[],
-            )
+            return PostResponseSchema.model_validate(updated_post)

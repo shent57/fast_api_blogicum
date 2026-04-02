@@ -31,21 +31,4 @@ class GetCategoriesUseCase:
                               for c in categories 
                               if title.lower() in c.title.lower()]
 
-            for c in categories:
-                created_at = (
-                    c.created_at
-                    if isinstance(c.created_at, datetime)
-                    else datetime.fromisoformat(c.created_at)
-                )
-            return [
-                CategoryResponseSchema(
-                    id=c.id,
-                    title=c.title,
-                    description=c.description,
-                    slug=c.slug,
-                    is_published=c.is_published,
-                    created_at=created_at,
-                    model="blog.category",
-                )
-                for c in categories
-            ]
+            return [CategoryResponseSchema.model_validate(c) for c in categories]

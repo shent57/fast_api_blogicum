@@ -22,16 +22,4 @@ class UpdateLocationUseCase:
                 **location_data.model_dump(exclude_none=True)
             )
 
-            created_at = (
-                updated_location.created_at
-                if isinstance(updated_location.created_at, datetime)
-                else datetime.fromisoformat(updated_location.created_at)
-            )
-
-            return LocationResponseSchema(
-                id=updated_location.id,
-                name=updated_location.name,
-                is_published=updated_location.is_published,
-                created_at=created_at,
-                model="blog.location",
-            )
+            return LocationResponseSchema.model_validate(updated_location)
