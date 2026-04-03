@@ -1,6 +1,5 @@
 from datetime import datetime
-
-from infrastructure.sqlite.database import Base
+from fastapi_app.src.infrastructure.sqlite.database import Base
 from sqlalchemy import Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
