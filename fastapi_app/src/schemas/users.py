@@ -33,4 +33,4 @@ class User(BaseUser):
 
     is_active: bool
     date_joined: datetime
-    pk: int
+    id: int
