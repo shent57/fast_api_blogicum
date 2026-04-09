@@ -42,3 +42,32 @@ class CommentPermissionException(BaseDomainException):
         detail = self._exception_text_template.format(action=action)
 
         super().__init__(detail=detail)
+
+
+class PostNotFoundException(BaseDomainException):
+    _exception_text_template = "Пост с id='{post_id}' не найден"
+
+    def __init__(self, post_id: int) -> None:
+        detail = self._exception_text_template.format(post_id=post_id)
+
+        super().__init__(detail=detail)
+
+
+class CategoryNotFoundException(BaseDomainException):
+    _exception_text_template = "Категория с id='{category_id}' не найдена"
+
+    def __init__(self, category_id: int) -> None:
+        detail = self._exception_text_template.format(category_id=category_id)
+
+        super().__init__(detail=detail)
+
+
+class LocationNotFoundException(BaseDomainException):
+    _exception_text_template = "Локация с id='{location_id}' не найдена"
+
+    def __init__(self, location_id: int) -> None:
+        detail = self._exception_text_template.format(location_id=location_id)
+
+        super().__init__(detail=detail)
+
+

@@ -1,10 +1,11 @@
-from datetime import datetime
-
+import logging
 from core.exceptions.database_exceptions import UserNotFoundException
 from core.exceptions.domain_exceptions import UserNotFoundByLoginException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.users import UserRepository
 from schemas.users import User as UserSchema
+
+logger = logging.getLogger(__name__)
 
 
 class GetUserByLoginUseCase:
@@ -17,6 +18,8 @@ class GetUserByLoginUseCase:
             with self._database.session() as session:
                 user = self._user_repository.get_by_username(session, login)
         except UserNotFoundException:
-            raise UserNotFoundByLoginException(login=login)
+            error = UserNotFoundByLoginException(login=login)
+            logger.error(error.get_detail())
+            raise error
 
         return UserSchema.model_validate(user)

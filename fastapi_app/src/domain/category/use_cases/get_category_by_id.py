@@ -1,9 +1,10 @@
-from datetime import datetime
-
+import logging
 from core.exceptions.database_exceptions import CategoryNotFoundException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.categories import CategoryRepository
 from schemas.categories import CategoryResponseSchema
+
+logger = logging.getLogger(__name__)
 
 
 class GetCategoryByIdUseCase:
@@ -14,17 +15,12 @@ class GetCategoryByIdUseCase:
         self._database = database
 
     async def execute(self, category_id: int) -> CategoryResponseSchema:
-        with self._database.session() as session:
-            category = self._category_repository.get_by_id(
-                session, category_id)
+        try:
+            with self._database.session() as session:
+                category = self._category_repository.get_by_id(
+                    session, category_id)
 
-            if not category:
-                raise CategoryNotFoundException()
-
-            created_at = (
-                category.created_at
-                if isinstance(category.created_at, datetime)
-                else datetime.fromisoformat(category.created_at)
-            )
-
-            return CategoryResponseSchema.model_validate(category)
+                return CategoryResponseSchema.model_validate(category)
+        except CategoryNotFoundException as e:
+            logger.error(e.get_detail())
+            raise e

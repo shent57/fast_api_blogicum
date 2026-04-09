@@ -7,6 +7,7 @@ from api.depends import (
     get_get_locations_use_case,
     update_location_use_case,
 )
+from core.exceptions.database_exceptions import LocationNotFoundException
 from domain.location.use_cases.create_location import CreateLocationUseCase
 from domain.location.use_cases.delete_location import DeleteLocationUseCase
 from domain.location.use_cases.get_location_by_id import GetLocationByIdUseCase
@@ -31,7 +32,12 @@ async def get_location_by_id(
     use_case: GetLocationByIdUseCase = Depends(
         get_get_location_by_id_use_case),
 ) -> LocationResponseSchema:
-    return await use_case.execute(location_id)
+    try:
+        return await use_case.execute(location_id)
+    except LocationNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.get("/blogs/location", response_model=list[LocationResponseSchema])
@@ -65,7 +71,12 @@ async def update_location(
     new_data: LocationUpdateData,
     use_case: UpdateLocationUseCase = Depends(update_location_use_case),
 ) -> LocationResponseSchema:
-    return await use_case.execute(filter_location.location_id, new_data)
+    try:
+        return await use_case.execute(filter_location.location_id, new_data)
+    except LocationNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.delete("/blogs/location", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,6 +88,9 @@ async def delete_location(
         raise HTTPException(
             status_code=400, 
             detail="Можно удалять только по pk")
-
-    await use_case.execute(delete_filter.value)
-    return
+    try:
+        await use_case.execute(delete_filter.value)
+    except LocationNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )

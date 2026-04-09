@@ -1,11 +1,11 @@
 from typing import List, Type
 
-from core.exceptions.database_exceptions import (PostAlreadyExistsException,
-                                                 PostNotFoundException)
+from core.exceptions.database_exceptions import (CommentAlreadyExistsException,
+                                                 CommentNotFoundException)
 from infrastructure.sqlite.models.comments import Comment as CommentModel
 from schemas.comments import CommentCreate, CommentUpdateData
 from sqlalchemy import insert, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 
@@ -14,23 +14,29 @@ class CommentRepository:
         self._model: Type[CommentModel] = CommentModel
 
     def get_by_id(self, session: Session, comment_id: int) -> CommentModel:
-        query = select(self._model).where(self._model.id == comment_id)
-        comment = session.scalar(query)
-        if not comment:
-            raise PostNotFoundException
+        try:
+            query = select(self._model).where(self._model.id == comment_id)
+            comment = session.scalar(query)
+            if not comment:
+                raise CommentNotFoundException(comment_id=comment_id)
 
-        return comment
+            return comment
+        except SQLAlchemyError:
+            raise CommentNotFoundException(comment_id=comment_id)
 
     def get_by_post(
         self, session: Session, post_id: int, only_published: bool = True
     ) -> List[CommentModel]:
-        query = select(self._model).where(self._model.post_id == post_id)
+        try:
+            query = select(self._model).where(self._model.post_id == post_id)
 
-        if only_published:
-            query = query.where(self._model.is_published)
+            if only_published:
+                query = query.where(self._model.is_published)
 
-        query = query.order_by(self._model.created_at)
-        return list(session.scalars(query))
+            query = query.order_by(self._model.created_at)
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def create(
         self, session: Session, comment: CommentCreate, author_id: int
@@ -44,11 +50,15 @@ class CommentRepository:
                  .returning(self._model))
 
         try:
-            comment = session.scalar(query)
+            comment_obj = session.scalar(query)
+            session.commit()
+            return comment_obj
         except IntegrityError:
-            raise PostAlreadyExistsException()
-
-        return comment
+            session.rollback()
+            raise CommentAlreadyExistsException()
+        except SQLAlchemyError:
+            session.rollback()
+            raise CommentAlreadyExistsException()
 
     def update(
         self,
@@ -57,26 +67,36 @@ class CommentRepository:
         user_id: int,
         comment_data: CommentUpdateData,
     ) -> CommentModel:
-        comment = self.get_by_id(session, comment_id)
+        try:
+            comment = self.get_by_id(session, comment_id)
 
-        if comment.author_id != user_id:
-            raise PermissionError(
-                "You do not have permission to edit this comment")
+            if comment.author_id != user_id:
+                raise PermissionError(
+                    "You do not have permission to edit this comment")
 
-        update_values = {
-            k: v for k, v in comment_data.model_dump().items() if v is not None
-        }
+            update_values = {
+                k: v for k, v in comment_data.model_dump().items() if v is not None
+            }
 
-        for key, value in update_values.items():
-            setattr(comment, key, value)
+            for key, value in update_values.items():
+                setattr(comment, key, value)
 
-        return comment
+            session.commit()
+            return comment
+        except SQLAlchemyError:
+            session.rollback()
+            raise CommentNotFoundException(comment_id=comment_id)
 
     def delete(self, session: Session, comment_id: int, user_id: int) -> None:
-        comment = self.get_by_id(session, comment_id)
+        try:
+            comment = self.get_by_id(session, comment_id)
 
-        if comment.author_id != user_id:
-            raise PermissionError(
-                "You do not have permission to delete this comment")
+            if comment.author_id != user_id:
+                raise PermissionError(
+                    "You do not have permission to delete this comment")
 
-        session.delete(comment)
+            session.delete(comment)
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise CommentNotFoundException(comment_id=comment_id)

@@ -1,10 +1,11 @@
 from datetime import datetime
 from typing import List  # для указания необязательных полей
-
+from fastapi import HTTPException, status
 from pydantic import (  # используется для создания моделей данных и валидации
     BaseModel, 
     Field, 
-    ConfigDict)
+    ConfigDict,
+    field_validator)
 from schemas.comments import CommentResponseSchema
 
 
@@ -19,6 +20,26 @@ class PostRequestSchema(BaseModel):
     image: str | None = None
     category_id: int
     location_id: int | None = None
+
+    @field_validator("pub_date")
+    @staticmethod
+    def validate_pub_date(pub_date: datetime) -> datetime:
+        if pub_date < datetime.now():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Дата публикации не может быть в прошлом",
+            )
+        return pub_date
+    
+    @field_validator("title")
+    @staticmethod
+    def validate_title(title: str) -> str:
+        if not title or title.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Заголовок не может быть пустым",
+            )
+        return title.strip()
 
 
 class PostResponseSchema(BaseModel):
@@ -49,3 +70,13 @@ class PostUpdateData(BaseModel):
     category: int | None = None
     location: int | None = None
     created_at: datetime | None = None
+
+    @field_validator("title")
+    @staticmethod
+    def validate_title(title: str | None) -> str | None:
+        if title is not None and not title.strip():
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Заголовок не может быть пустым",
+            )
+        return title.strip() if title else None

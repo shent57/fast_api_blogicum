@@ -1,9 +1,10 @@
-from datetime import datetime
-
+import logging
 from core.exceptions.database_exceptions import LocationNotFoundException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.locations import LocationRepository
 from schemas.locations import LocationResponseSchema
+
+logger = logging.getLogger(__name__)
 
 
 class GetLocationByIdUseCase:
@@ -14,12 +15,13 @@ class GetLocationByIdUseCase:
         self._database = database
 
     async def execute(self, location_id: int) -> LocationResponseSchema:
-        with self._database.session() as session:
-            location = self._location_repository.get_by_id(
-                session, 
-                location_id)
+        try:
+            with self._database.session() as session:
+                location = self._location_repository.get_by_id(
+                    session, 
+                    location_id)
 
-            if not location:
-                raise LocationNotFoundException()
-
-            return LocationResponseSchema.model_validate(location)
+                return LocationResponseSchema.model_validate(location)
+        except LocationNotFoundException as e:
+            logger.error(e.get_detail())
+            raise e

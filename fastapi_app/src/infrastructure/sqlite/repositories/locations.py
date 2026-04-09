@@ -5,7 +5,7 @@ from core.exceptions.database_exceptions import (
 from infrastructure.sqlite.models.locations import Location as LocationModel
 from schemas.locations import LocationCreate as LocationSchema
 from sqlalchemy import insert, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 
@@ -14,23 +14,29 @@ class LocationRepository:
         self._model: Type[LocationModel] = LocationModel
 
     def get_by_id(self, session: Session, location_id: int) -> LocationModel:
-        query = select(self._model).where(self._model.id == location_id)
+        try:
+            query = select(self._model).where(self._model.id == location_id)
 
-        location = session.scalar(query)
-        if not location:
-            raise LocationNotFoundException()
+            location = session.scalar(query)
+            if not location:
+                raise LocationNotFoundException()
 
-        return location
+            return location
+        except SQLAlchemyError:
+            raise LocationNotFoundException(location_id=location_id)
 
     def get_all(
         self, session: Session, is_published: bool | None = None
     ) -> List[LocationModel]:
-        query = select(self._model)
+        try:
+            query = select(self._model)
 
-        if is_published is not None:
-            query = query.where(self._model.is_published == is_published)
+            if is_published is not None:
+                query = query.where(self._model.is_published == is_published)
 
-        return list(session.scalars(query))
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def create(
             self, 
@@ -43,26 +49,38 @@ class LocationRepository:
         )
 
         try:
-            location = session.scalar(query)
+            location_obj = session.scalar(query)
+            session.commit()
+            return location_obj
         except IntegrityError:
-            raise LocationAlreadyExistsException()
-
-        return location
+            session.rollback()
+            raise LocationAlreadyExistsException(name=location.name)
+        except SQLAlchemyError:
+            session.rollback()
+            raise LocationAlreadyExistsException(name=location.name)
 
     def update(
             self, 
             session: Session, 
             location_id: int, **kwargs) -> LocationModel:
-        location = self.get_by_id(session, location_id)
+        try:
+            location = self.get_by_id(session, location_id)
 
-        for key, value in kwargs.items():
-            if hasattr(location, key):
-                setattr(location, key, value)
+            for key, value in kwargs.items():
+                if hasattr(location, key):
+                    setattr(location, key, value)
 
-        session.flush()
-
-        return location
+            session.commit()
+            return location
+        except SQLAlchemyError:
+            session.rollback()
+            raise LocationNotFoundException(location_id=location_id)
 
     def delete(self, session: Session, location_id: int) -> None:
-        location = self.get_by_id(session, location_id)
-        session.delete(location)
+        try:
+            location = self.get_by_id(session, location_id)
+            session.delete(location)
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise LocationNotFoundException(location_id=location_id)

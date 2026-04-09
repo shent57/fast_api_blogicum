@@ -20,6 +20,10 @@ from schemas.categories import (
     CategoryUpdateFilter,
 )
 
+from core.exceptions.database_exceptions import (
+    CategoryNotFoundException, 
+    CategoryAlreadyExistsException)
+
 router = APIRouter(prefix="/blogs/category", tags=["Categories"])
 
 
@@ -31,7 +35,12 @@ async def get_category_by_id(
     use_case: GetCategoryByIdUseCase = Depends(
         get_get_category_by_id_use_case),
 ) -> CategoryResponseSchema:
-    return await use_case.execute(category_id)
+    try:
+        return await use_case.execute(category_id)
+    except CategoryNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.get("/blogs/category", response_model=list[CategoryResponseSchema])
@@ -40,7 +49,12 @@ async def get_categories(
     title: str | None = None,
     use_case: GetCategoriesUseCase = Depends(get_get_categories_use_case),
 ) -> list[CategoryResponseSchema]:
-    return await use_case.execute(is_published, title)
+    try:
+        return await use_case.execute(is_published, title)
+    except CategoryNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.post(
@@ -52,7 +66,12 @@ async def create_category(
     category: CategoryCreate,
     use_case: CreateCategoryUseCase = Depends(create_category_use_case),
 ) -> CategoryResponseSchema:
-    return await use_case.execute(category)
+    try:
+        return await use_case.execute(category)
+    except CategoryAlreadyExistsException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=exc.get_detail()
+    )
 
 
 @router.put(
@@ -65,7 +84,12 @@ async def update_category(
     new_data: CategoryUpdateData,
     use_case: UpdateCategoryUseCase = Depends(update_category_use_case),
 ) -> CategoryResponseSchema:
-    return await use_case.execute(filter_category.category_id, new_data)
+    try:
+        return await use_case.execute(filter_category.category_id, new_data)
+    except CategoryNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.delete("/blogs/category", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,6 +101,9 @@ async def delete_category(
         raise HTTPException(
             status_code=400, 
             detail="Можно удалять только по pk")
-
-    await use_case.execute(delete_filter.value)
-    return
+    try:
+        await use_case.execute(delete_filter.value)
+    except CategoryNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )

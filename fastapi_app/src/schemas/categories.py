@@ -1,6 +1,6 @@
 import re  # для использования регулярных выражений
 from datetime import datetime
-
+from fastapi import HTTPException, status
 from pydantic import (  # используется для создания моделей данных и валидации
     BaseModel, Field, field_validator, ConfigDict)
 
@@ -19,9 +19,9 @@ class CategoryBase(BaseModel):
     @staticmethod
     def validate_slug(slug: str) -> str:
         if not re.match(r"^[-a-zA-Z0-9_]+$", slug):
-            raise ValueError(
-                "Slug должен содержать только латинские буквы, "
-                "цифры, дефис и подчёркивание"
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Slug должен содержать только латинские буквы, цифры, дефис и подчёркивание"
             )
         return slug
 
@@ -32,6 +32,7 @@ class CategoryCreate(CategoryBase):
 
 class CategoryResponseSchema(CategoryBase):
     model_config = ConfigDict(from_attributes=True)
+    created_at: datetime
     id: int = Field(..., description="Уникальный идентификатор категории")
     model: str = Field("blog.category", description="Тип модели")
 

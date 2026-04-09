@@ -26,6 +26,22 @@ class CreateUser(BaseUser):
             )
 
         return username
+    
+    @field_validator("password")
+    @staticmethod
+    def validate_password(password: SecretStr) -> SecretStr:
+        password_str = password.get_secret_value()
+        if not any(c.isdigit() for c in password_str):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Пароль должен содержать хотя бы одну цифру"
+            )
+        if not any(c.isupper() for c in password_str):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Пароль должен содержать хотя бы одну заглавную букву"
+            )
+        return password
 
 
 class User(BaseUser):

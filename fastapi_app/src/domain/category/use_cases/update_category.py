@@ -1,8 +1,10 @@
-from datetime import datetime
-
+import logging
+from core.exceptions.database_exceptions import CategoryNotFoundException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.categories import CategoryRepository
 from schemas.categories import CategoryResponseSchema, CategoryUpdateData
+
+logger = logging.getLogger(__name__)
 
 
 class UpdateCategoryUseCase:
@@ -16,16 +18,14 @@ class UpdateCategoryUseCase:
     async def execute(
         self, category_id: int, category_data: CategoryUpdateData
     ) -> CategoryResponseSchema:
-        with self._database.session() as session:
-            updated_category = self._category_repository.update(
-                session, 
-                category_id, 
-                **category_data.model_dump(exclude_none=True)
-            )
-
-            created_at = (
-                updated_category.created_at
-                if isinstance(updated_category.created_at, datetime)
-                else datetime.fromisoformat(updated_category.created_at)
-            )
-            return CategoryResponseSchema.model_validate(updated_category)
+        try:
+            with self._database.session() as session:
+                updated_category = self._category_repository.update(
+                    session, 
+                    category_id, 
+                    **category_data.model_dump(exclude_none=True)
+                )
+                return CategoryResponseSchema.model_validate(updated_category)
+        except CategoryNotFoundException as e:
+            logger.error(e.get_detail())
+            raise e

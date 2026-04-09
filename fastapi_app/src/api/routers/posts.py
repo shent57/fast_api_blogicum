@@ -8,6 +8,7 @@ from api.depends import (
     update_post_use_case,
 )
 from core.exceptions.domain_exceptions import PostPermissionException
+from core.exceptions.database_exceptions import PostNotFoundException
 from domain.post.use_cases.create_post import CreatePostUseCase
 from domain.post.use_cases.delete_post import DeletePostUseCase
 from domain.post.use_cases.get_post_by_id import GetPostByIdUseCase
@@ -29,7 +30,12 @@ async def get_posts_by_id(
     post_id: int,
     use_case: GetPostByIdUseCase = Depends(get_get_post_by_id_use_case),
 ) -> PostResponseSchema:
-    return await use_case.execute(post_id)
+    try:
+        return await use_case.execute(post_id)
+    except PostNotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.get_detail()
+        )
 
 
 @router.get("/blogs/post", response_model=list[PostResponseSchema])

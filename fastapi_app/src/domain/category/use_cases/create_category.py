@@ -1,8 +1,10 @@
-from datetime import datetime
-
+import logging
+from core.exceptions.database_exceptions import CategoryAlreadyExistsException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.categories import CategoryRepository
 from schemas.categories import CategoryCreate, CategoryResponseSchema
+
+logger = logging.getLogger(__name__)
 
 
 class CreateCategoryUseCase:
@@ -16,15 +18,13 @@ class CreateCategoryUseCase:
     async def execute(
             self, 
             category: CategoryCreate) -> CategoryResponseSchema:
-        with self._database.session() as session:
-            created_category = self._category_repository.create(
-                session, 
-                category)
+        try:
+            with self._database.session() as session:
+                created_category = self._category_repository.create(
+                    session, 
+                    category)
 
-            created_at = (
-                created_category.created_at
-                if isinstance(created_category.created_at, datetime)
-                else datetime.fromisoformat(created_category.created_at)
-            )
-
-            return CategoryResponseSchema.model_validate(created_category)
+                return CategoryResponseSchema.model_validate(created_category)
+        except CategoryAlreadyExistsException as e:
+            logger.error(e.get_detail())
+            raise e

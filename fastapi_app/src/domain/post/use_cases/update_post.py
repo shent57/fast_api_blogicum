@@ -2,6 +2,9 @@ from core.exceptions.domain_exceptions import PostPermissionException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.posts import PostRepository
 from schemas.posts import PostResponseSchema, PostUpdateData
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UpdatePostUseCase:
@@ -14,14 +17,16 @@ class UpdatePostUseCase:
         post_id: int,
         user_id: int,
         post_data: PostUpdateData,
-        is_stuff: bool = False,
+        is_staff: bool = False,
     ) -> PostResponseSchema:
-        with self._database.session() as session:
-            try:
+        try:
+            with self._database.session() as session:
                 updated_post = self._post_repository.update(
-                    session, post_id, user_id, post_data, is_stuff
+                    session, post_id, user_id, post_data, is_staff
                 )
-            except PermissionError:
-                raise PostPermissionException("редактирования")
+        except PermissionError:
+            error = PostPermissionException("редактирования")
+            logger.error(error.get_detail())
+            raise error
 
-            return PostResponseSchema.model_validate(updated_post)
+        return PostResponseSchema.model_validate(updated_post)

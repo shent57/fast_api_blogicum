@@ -1,6 +1,10 @@
 from core.exceptions.domain_exceptions import PostPermissionException
+from core.exceptions.database_exceptions import PostNotFoundException
 from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.posts import PostRepository
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DeletePostUseCase:
@@ -13,12 +17,17 @@ class DeletePostUseCase:
             post_id: int, 
             user_id: int, 
             is_staff: bool = False) -> None:
-        with self._database.session() as session:
-            try:
+        try:
+            with self._database.session() as session:
                 self._post_repository.delete(
                     session, 
                     post_id, 
                     user_id, 
                     is_staff)
-            except PermissionError:
-                raise PostPermissionException("удаления")
+        except PermissionError:
+            error = PostPermissionException("удаления")
+            logger.error(error.get_detail())
+            raise error
+        except PostNotFoundException as e:
+            logger.error(e.get_detail())
+            raise e

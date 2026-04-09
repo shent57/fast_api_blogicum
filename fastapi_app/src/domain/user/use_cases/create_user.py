@@ -6,6 +6,9 @@ from infrastructure.sqlite.database import Database
 from infrastructure.sqlite.repositories.users import UserRepository
 from schemas.users import CreateUser
 from schemas.users import User as UserSchema
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CreateUserUseCase:
@@ -22,6 +25,8 @@ class CreateUserUseCase:
                 user_dict["last_login"] = None
                 created_user = self._user_repository.create(session, user_dict)
         except UserAlreadyExistsException:
-            raise UserLoginIsNotUniqueException(login=user.username)
+            error = UserLoginIsNotUniqueException(login=user.username)
+            logger.error(error.get_detail())
+            raise error
 
         return UserSchema.model_validate(created_user)

@@ -6,7 +6,7 @@ from core.exceptions.database_exceptions import (PostAlreadyExistsException,
 from infrastructure.sqlite.models.posts import Post as PostModel
 from schemas.posts import PostUpdateData
 from sqlalchemy import and_, desc, insert, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 
@@ -15,65 +15,75 @@ class PostRepository:
         self._model: Type[PostModel] = PostModel
 
     def get_by_id(self, session: Session, post_id: int) -> PostModel:
-        query = select(self._model).where(self._model.id == post_id)
+        try:
+            query = select(self._model).where(self._model.id == post_id)
 
-        post = session.scalar(query)
-        if not post:
-            raise PostNotFoundException()
-
-        return post
+            post = session.scalar(query)
+            if not post:
+                raise PostNotFoundException(post_id=post_id)
+            return post
+        except SQLAlchemyError:
+            raise PostNotFoundException(post_id=post_id)
 
     def get_all(self, session: Session) ->  list[PostModel]:
-        query = select(self._model)
-
-        return list(session.scalars(query))
+        try:
+            query = select(self._model)
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def get_published_posts(self, session: Session) -> List[PostModel]:
-        query = (
-            select(self._model)
-            .where(
-                and_(
-                    self._model.is_published, 
-                    self._model.pub_date <= datetime.now())
+        try:
+            query = (
+                select(self._model)
+                .where(
+                    and_(
+                        self._model.is_published, 
+                        self._model.pub_date <= datetime.now())
+                )
+                .order_by(desc(self._model.pub_date))
             )
-            .order_by(desc(self._model.pub_date))
-        )
-
-        return list(session.scalars(query))
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def get_by_category(
         self, session: Session, category_id: int, only_published: bool = True
     ) -> List[PostModel]:
-        query = (
-            select(self._model)
-            .where(self._model.category_id == category_id))
+        try:
+            query = (
+                select(self._model)
+                .where(self._model.category_id == category_id))
 
-        if only_published:
-            query = query.where(
-                and_(
-                    self._model.is_published, 
-                    self._model.pub_date <= datetime.now())
-            )
+            if only_published:
+                query = query.where(
+                    and_(
+                        self._model.is_published, 
+                        self._model.pub_date <= datetime.now())
+                )
 
-        query = query.order_by(desc(self._model.pub_date))
-
-        return list(session.scalars(query))
+            query = query.order_by(desc(self._model.pub_date))
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def get_by_author(
         self, session: Session, author_id: int, only_published: bool = True
     ) -> List[PostModel]:
-        query = select(self._model).where(self._model.author_id == author_id)
+        try:
+            query = select(self._model).where(self._model.author_id == author_id)
 
-        if only_published:
-            query = query.where(
-                and_(
-                    self._model.is_published, 
-                    self._model.pub_date <= datetime.now())
-            )
+            if only_published:
+                query = query.where(
+                    and_(
+                        self._model.is_published, 
+                        self._model.pub_date <= datetime.now())
+                )
 
-        query = query.order_by(desc(self._model.pub_date))
-
-        return list(session.scalars(query))
+            query = query.order_by(desc(self._model.pub_date))
+            return list(session.scalars(query))
+        except SQLAlchemyError:
+            return []
 
     def create(self, session: Session, post_data: dict) -> PostModel:
         query = insert(self._model).values(**post_data).returning(self._model)
@@ -81,11 +91,13 @@ class PostRepository:
         try:
             post = session.scalar(query)
             session.commit()
+            return post
         except IntegrityError:
             session.rollback()
-            raise PostAlreadyExistsException()
-
-        return post
+            raise PostAlreadyExistsException(title=post_data.get("title"))
+        except SQLAlchemyError:
+            session.rollback()
+            raise PostAlreadyExistsException(title=post_data.get("title"))
 
     def update(
         self,
@@ -95,22 +107,26 @@ class PostRepository:
         post_data: PostUpdateData,
         is_staff: bool = False,
     ) -> PostModel:
-        post = self.get_by_id(session, post_id)
+        try:
+            post = self.get_by_id(session, post_id)
 
-        if post.author_id != user_id and not is_staff:
-            raise PermissionError(
-                "You do not have permission to edit this post")
+            if post.author_id != user_id and not is_staff:
+                raise PermissionError(
+                    "You do not have permission to edit this post")
 
-        update_values = {
-            k: v for k, v in post_data.model_dump().items() if v is not None
-        }
+            update_values = {
+                k: v for k, v in post_data.model_dump().items() if v is not None
+            }
 
-        for key, value in update_values.items():
-            setattr(post, key, value)
+            for key, value in update_values.items():
+                setattr(post, key, value)
 
-        session.flush()
+            session.commit()
 
-        return post
+            return post
+        except SQLAlchemyError:
+            session.rollback()
+            raise PostNotFoundException(post_id=post_id)
 
     def delete(
         self, 
@@ -119,10 +135,15 @@ class PostRepository:
         user_id: int, 
         is_staff: bool = False
     ) -> None:
-        post = self.get_by_id(session, post_id)
+        try:
+            post = self.get_by_id(session, post_id)
 
-        if post.author_id != user_id and not is_staff:
-            raise PermissionError(
-                "You do not have permission to delete this post")
+            if post.author_id != user_id and not is_staff:
+                raise PermissionError(
+                    "You do not have permission to delete this post")
 
-        session.delete(post)
+            session.delete(post)
+            session.commit()
+        except SQLAlchemyError:
+            session.rollback()
+            raise PostNotFoundException(post_id=post_id)
