@@ -1,0 +1,44 @@
+from typing import List
+import logging
+from src.infrastructure.sqlite.database import Database
+from src.infrastructure.sqlite.repositories.posts import PostRepository
+from src.infrastructure.sqlite.repositories.users import UserRepository
+from src.schemas.posts import PostResponseSchema
+
+logger = logging.getLogger(__name__)
+
+
+class GetPostsUseCase:
+    def __init__(
+        self,
+        post_repository: PostRepository,
+        user_repository: UserRepository,
+        database: Database,
+    ):
+        self._post_repository = post_repository
+        self._user_repository = user_repository
+        self._database = database
+
+    async def execute(
+        self,
+        category_id: int | None = None,
+        author: int | None = None,
+        location: int | None = None,
+    ) -> List[PostResponseSchema]:
+        try:
+            with self._database.session() as session:
+                posts = self._post_repository.get_all(session)
+
+                if category_id is not None:
+                    posts = [p for p in posts if p.category_id == category_id]
+
+                if author is not None:
+                    posts = [p for p in posts if p.author_id == author]
+                if location is not None:
+                    posts = [p for p in posts if p.location_id == location]
+
+                return [PostResponseSchema.model_validate(post) for post in posts]
+
+        except Exception as e:
+            logger.error(f"Ошибка при получении постов: {str(e)}")
+            return []

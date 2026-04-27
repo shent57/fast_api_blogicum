@@ -5,12 +5,12 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from fastapi_app.src.infrastructure.sqlite.database import Base  # noqa
-from fastapi_app.src.infrastructure.sqlite.models.users import *  # noqa
-from fastapi_app.src.infrastructure.sqlite.models.posts import *  # noqa
-from fastapi_app.src.infrastructure.sqlite.models.comments import *  # noqa
-from fastapi_app.src.infrastructure.sqlite.models.categories import *  # noqa
-from fastapi_app.src.infrastructure.sqlite.models.locations import *  # noqa
+from src.infrastructure.sqlite.database import Base  # noqa
+from src.infrastructure.sqlite.models.users import *  # noqa
+from src.infrastructure.sqlite.models.posts import *  # noqa
+from src.infrastructure.sqlite.models.comments import *  # noqa
+from src.infrastructure.sqlite.models.categories import *  # noqa
+from src.infrastructure.sqlite.models.locations import *  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
